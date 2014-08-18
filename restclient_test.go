@@ -39,3 +39,24 @@ func TestCreateRequest(t *testing.T) {
 	assert.Equal(req.Request.Proto, "HTTP/1.1")
 	assert.NotNil(req.Request.Header)
 }
+
+func TestCreateClient(t *testing.T) {
+	assert := assert.New(t)
+	req := NewRequest("GET", "url.com", *auth)
+	req.createHTTPClient()
+	assert.NotNil(req.Client)
+	assert.NotNil(req.Client.Transport)
+}
+
+type TestStruct struct {
+	Variable string `json:"variable"`
+}
+
+func TestEncodeRequest(t *testing.T) {
+	assert := assert.New(t)
+	req := NewRequest("GET", "url.com", *auth)
+	req.RequestBody = TestStruct{"hi"}
+	err := req.EncodeRequestBody()
+	assert.Nil(err)
+	assert.NotNil(req.RequestReader)
+}
