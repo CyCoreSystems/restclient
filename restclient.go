@@ -98,10 +98,10 @@ func (r *Request) Do() error {
 	}
 
 	// Create the client object
-	r.createClient()
+	r.createHTTPClient()
 
 	// Create the request object
-	err = r.createRequest()
+	err = r.createHTTPRequest()
 	if err != nil {
 		return err
 	}
@@ -227,10 +227,10 @@ func (r *Request) DecodeResponse() error {
 	return nil
 }
 
-// createClient generates the http.Client object
+// createHTTPClient generates the http.Client object
 // from default parameters
-func (r *Request) createClient() {
-	glog.V(1).Infoln("createClient: started")
+func (r *Request) createHTTPClient() {
+	glog.V(1).Infoln("createHTTPClient: started")
 
 	// Create transport for the request
 	glog.V(2).Infoln("Creating http.Transport")
@@ -244,13 +244,13 @@ func (r *Request) createClient() {
 	r.Client = http.Client{
 		Transport: &transport,
 	}
-	glog.V(1).Infoln("createClient: completed")
+	glog.V(1).Infoln("createHTTPClient: completed")
 }
 
-// createRequest generates the actual http.Request object
+// createHTTPRequest generates the actual http.Request object
 // from default parameters
-func (r *Request) createRequest() error {
-	glog.V(1).Infoln("createRequest: started")
+func (r *Request) createHTTPRequest() error {
+	glog.V(1).Infoln("createHTTPRequest: started")
 	// Create the new request
 	var err error
 	r.Request, err = http.NewRequest(r.Method, r.Url, r.RequestReader)
@@ -259,7 +259,7 @@ func (r *Request) createRequest() error {
 		return err
 	}
 
-	glog.V(1).Infoln("createRequest: completed")
+	glog.V(1).Infoln("createHTTPRequest: completed")
 	return nil
 }
 
