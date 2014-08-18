@@ -1,4 +1,6 @@
-restClient-go
-=============
+restclient
+==========
 
-restClient: a flexible JSON-REST client library
+restclient: a flexible JSON-REST client library for Go
+
+Usage:  TODO
