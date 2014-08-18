@@ -12,7 +12,7 @@
 	Golang structs with JSON tags.
 
 */
-package restClient
+package restclient
 
 import (
 	"bytes"
