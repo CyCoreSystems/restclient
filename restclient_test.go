@@ -93,12 +93,3 @@ func TestProcessStatusCode(t *testing.T) {
 	err = req.ProcessStatusCode()
 	assert.Nil(err)
 }
-
-/*
- */
-
-func TestDecodeResponse(t *testing.T) {
-	assert := assert.New(t)
-	req := NewRequest("GET", "url.com", *auth)
-	assert.NotNil(req)
-}
