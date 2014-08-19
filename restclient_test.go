@@ -100,5 +100,5 @@ func TestProcessStatusCode(t *testing.T) {
 func TestDecodeResponse(t *testing.T) {
 	assert := assert.New(t)
 	req := NewRequest("GET", "url.com", *auth)
-	req.Response = new(http.Response)
+	assert.NotNil(req)
 }
