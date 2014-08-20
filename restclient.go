@@ -268,16 +268,14 @@ func (r *Request) createHTTPRequest() error {
 	return nil
 }
 
-// Get is a shorthand for MakeRequest("GET",url,nil,ret)
-// It calls the ARI server with a GET request
+// Get is a shorthand MakeRequest with method = "GET"
 func Get(url string, auth Auth, ret interface{}) error {
 	r := NewRequest("GET", url, auth)
 	r.ResponseBody = ret
 	return r.Do()
 }
 
-// Post is a shorthand for MakeRequest("POST",url,req,ret)
-// It calls the ARI server with a POST request
+// Post is a shorthand MakeRequest with method "POST"
 func Post(url string, auth Auth, req interface{}, ret interface{}) error {
 	r := NewRequest("POST", url, auth)
 	r.RequestBody = req
@@ -285,8 +283,7 @@ func Post(url string, auth Auth, req interface{}, ret interface{}) error {
 	return r.Do()
 }
 
-// Put is a shorthand for MakeRequest("PUT",url,req,ret)
-// It calls the ARI server with a PUT request
+// Post is a shorthand MakeRequest with method "PUT"
 func Put(url string, auth Auth, req interface{}, ret interface{}) error {
 	r := NewRequest("PUT", url, auth)
 	r.RequestBody = req
@@ -294,10 +291,17 @@ func Put(url string, auth Auth, req interface{}, ret interface{}) error {
 	return r.Do()
 }
 
-// Delete is a shorthand for MakeRequest("DELETE",url,nil,nil)
-// It calls the ARI server with a DELETE request
+// Delete is a shorthand MakeRequest with method "DELETE"
 func Delete(url string, auth Auth, req interface{}, ret interface{}) error {
 	r := NewRequest("DELETE", url, auth)
+	r.RequestBody = req
+	r.ResponseBody = ret
+	return r.Do()
+}
+
+// Delete is a shorthand MakeRequest with method "PATCH"
+func Patch(url string, auth Auth, req interface{}, ret interface{}) error {
+	r := NewRequest("PATCH", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
 	return r.Do()
@@ -313,7 +317,7 @@ func timeoutDialer(timeout time.Duration) func(network, addr string) (net.Conn, 
 }
 
 // NotFoundError indicates a 404 status code was received
-// from the ARI server
+// from the server
 type NotFoundError struct {
 	StatusCode int
 	Status     string
