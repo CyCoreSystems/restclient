@@ -2,10 +2,15 @@
 	restClient - convenience library fro REST API calls based on JSON
 
 	- Provides a generic interface for any http method
+
 	- Provides transparent JSON marshaling and unmarshaling (assuming appropriately-tagged structs)
+
 	- Support for Basic authentication
+
 	- Support for request timeouts (default: 2s)
+
 	- Classifies status codes and returns appropriate error type
+
 	- Returns http.Status and http.StatusType with error
 
 	Both request and response bodies are expected to be pointers to
@@ -298,11 +303,6 @@ func Delete(url string, auth Auth, req interface{}, ret interface{}) error {
 	return r.Do()
 }
 
-/*
- *
- *  Helper functions
- *
- */
 // timeoutDialer is a wrapper function which returns a customized
 // Dial function with a built-in timer for the provided timeout
 // duration
@@ -312,11 +312,6 @@ func timeoutDialer(timeout time.Duration) func(network, addr string) (net.Conn, 
 	}
 }
 
-/*
- *
- *  ERROR structs
- *
- */
 // NotFoundError indicates a 404 status code was received
 // from the ARI server
 type NotFoundError struct {
