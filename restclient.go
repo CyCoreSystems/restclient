@@ -276,15 +276,15 @@ func Get(url string, auth Auth, ret interface{}) error {
 }
 
 // Post is a shorthand MakeRequest with method "POST"
-func Post(url string, auth Auth, req interface{}, ret interface{}) error {
+func Post(url string, auth Auth, ret interface{}, req interface{}) error {
 	r := NewRequest("POST", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
 	return r.Do()
 }
 
-// Post is a shorthand MakeRequest with method "PUT"
-func Put(url string, auth Auth, req interface{}, ret interface{}) error {
+// Put is a shorthand MakeRequest with method "PUT"
+func Put(url string, auth Auth, ret interface{}, req interface{}) error {
 	r := NewRequest("PUT", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
@@ -292,15 +292,15 @@ func Put(url string, auth Auth, req interface{}, ret interface{}) error {
 }
 
 // Delete is a shorthand MakeRequest with method "DELETE"
-func Delete(url string, auth Auth, req interface{}, ret interface{}) error {
+func Delete(url string, auth Auth, ret interface{}, req interface{}) error {
 	r := NewRequest("DELETE", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
 	return r.Do()
 }
 
-// Delete is a shorthand MakeRequest with method "PATCH"
-func Patch(url string, auth Auth, req interface{}, ret interface{}) error {
+// Patch is a shorthand MakeRequest with method "PATCH"
+func Patch(url string, auth Auth, ret interface{}, req interface{}) error {
 	r := NewRequest("PATCH", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
