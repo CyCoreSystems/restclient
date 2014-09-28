@@ -94,7 +94,9 @@ func NewRequestAuth(method string, url string, username string, password string)
 	In general, this method should not be called directly.
 */
 func (r *Request) Do() error {
-	glog.V(1).Infoln("Do: started")
+	if glog.V(3) {
+		glog.Infoln("Do: started")
+	}
 
 	// Encode body to Json from the given body object
 	err := r.EncodeRequestBody()
@@ -116,18 +118,24 @@ func (r *Request) Do() error {
 
 	// Apply authentication information
 	if r.Auth.Username != "" {
-		glog.V(2).Infoln("Adding authentication information:", r.Auth)
+		if glog.V(3) {
+			glog.Infoln("Adding authentication information:", r.Auth)
+		}
 		r.Request.SetBasicAuth(r.Auth.Username, r.Auth.Password)
 	}
 
 	// Send request
-	glog.V(2).Infoln("Sending request to server")
+	if glog.V(3) {
+		glog.Infoln("Sending request to server")
+	}
 	err = r.Execute()
 	if err != nil {
 		return err
 	}
 
-	glog.V(1).Infoln("Do: completed")
+	if glog.V(3) {
+		glog.Infoln("Do: completed")
+	}
 	return nil
 }
 
@@ -135,7 +143,9 @@ func (r *Request) Do() error {
 // the Request with the Client.  It sets the Response property on
 // successful communication
 func (r *Request) Execute() error {
-	glog.V(1).Infoln("Execute: started")
+	if glog.V(3) {
+		glog.Infoln("Execute: started")
+	}
 	var err error
 	r.Response, err = r.Client.Do(r.Request)
 	if err != nil {
@@ -144,7 +154,9 @@ func (r *Request) Execute() error {
 	}
 	defer r.Response.Body.Close()
 
-	glog.V(3).Infoln("Server response:", r.Response)
+	if glog.V(3) {
+		glog.Infoln("Server response:", r.Response)
+	}
 
 	// Check for error codes
 	err = r.ProcessStatusCode()
@@ -158,35 +170,45 @@ func (r *Request) Execute() error {
 		return err
 	}
 
-	glog.V(1).Infoln("MakeRequest: completed")
+	if glog.V(3) {
+		glog.Infoln("MakeRequest: completed")
+	}
 	return nil
 }
 
 // EncodeRequestBody performs the selected encoding on the
 // provided request body, populating the RequestReader
 func (r *Request) EncodeRequestBody() error {
-	glog.V(1).Infoln("EncodeRequestBody: started")
+	if glog.V(3) {
+		glog.Infoln("EncodeRequestBody: started")
+	}
 	// Encode body to Json from the given body object
 	if r.RequestBody == nil {
-		glog.Warning("Nothing to encode")
+		glog.Warningln("Nothing to encode")
 		return nil
 	}
 
-	glog.V(2).Infoln("Encoding bodyObject (", r.RequestBody, ") to json")
+	if glog.V(3) {
+		glog.Infoln("Encoding bodyObject (", r.RequestBody, ") to json")
+	}
 	encodedBytes, err := json.Marshal(r.RequestBody)
 	if err != nil {
 		return err
 	}
 
 	r.RequestReader = bytes.NewReader(encodedBytes)
-	glog.V(1).Infoln("EncodeRequestBody: completed")
+	if glog.V(3) {
+		glog.Infoln("EncodeRequestBody: completed")
+	}
 	return nil
 }
 
 // ProcessStatusCode processes and returns classified errors resulting
 // from the Response's StatusCode
 func (r *Request) ProcessStatusCode() error {
-	glog.V(1).Infoln("ProcessStatusCode: started")
+	if glog.V(3) {
+		glog.Infoln("ProcessStatusCode: started")
+	}
 	resp := r.Response
 	if resp.StatusCode != 200 {
 		switch {
@@ -201,61 +223,83 @@ func (r *Request) ProcessStatusCode() error {
 		}
 	}
 
-	glog.V(1).Infoln("ProcessStatusCode: completed")
+	if glog.V(3) {
+		glog.Infoln("ProcessStatusCode: completed")
+	}
 	return nil
 }
 
 func (r *Request) DecodeResponse() error {
-	glog.V(1).Infoln("DecodeResponse: started")
+	if glog.V(3) {
+		glog.Infoln("DecodeResponse: started")
+	}
 
 	// Read the body into []byte
 	responseJson, err := ioutil.ReadAll(r.Response.Body)
 	if err != nil {
-		glog.Error("Failed to read from body:", r.Response.Body, err)
+		glog.Errorln("Failed to read from body:", r.Response.Body, err)
 		return fmt.Errorf("Failed to read from body:", err)
 	}
-	glog.V(2).Infoln("Server response:", r.Response.Status, responseJson)
+	if glog.V(3) {
+		glog.Infoln("Server response:", r.Response.Status, responseJson)
+	}
 
 	// Unmarshal into response object
 	if len(responseJson) > 0 {
-		glog.V(2).Infoln("Decoding response")
+		if glog.V(3) {
+			glog.Infoln("Decoding response")
+		}
 		err = json.Unmarshal(responseJson, r.ResponseBody)
 		if err != nil {
 			glog.Errorln("Failed to decode response body:", responseJson, err)
 			return fmt.Errorf("Failed to decode response: %v", err.Error())
 		}
 	} else {
-		glog.V(2).Infoln("Zero-length response body")
+		if glog.V(3) {
+			glog.Infoln("Zero-length response body")
+		}
 	}
 
-	glog.V(1).Infoln("DecodeResponse: completed")
+	if glog.V(3) {
+		glog.Infoln("DecodeResponse: completed")
+	}
 	return nil
 }
 
 // createHTTPClient generates the http.Client object
 // from default parameters
 func (r *Request) createHTTPClient() {
-	glog.V(1).Infoln("createHTTPClient: started")
+	if glog.V(3) {
+		glog.Infoln("createHTTPClient: started")
+	}
 
 	// Create transport for the request
-	glog.V(2).Infoln("Creating http.Transport")
+	if glog.V(3) {
+		glog.Infoln("Creating http.Transport")
+	}
 	dial := timeoutDialer(r.Timeout)
 	transport := http.Transport{
 		Dial: dial,
 	}
 
 	// Create Client
-	glog.V(2).Infoln("Creating http.Client")
+	if glog.V(3) {
+		glog.Infoln("Creating http.Client")
+	}
 	r.Client = http.Client{
 		Transport: &transport,
 	}
-	glog.V(1).Infoln("createHTTPClient: completed")
+	if glog.V(3) {
+		glog.Infoln("createHTTPClient: completed")
+	}
 }
 
 // createHTTPRequest generates the actual http.Request object
 // from default parameters
 func (r *Request) createHTTPRequest() error {
-	glog.V(1).Infoln("createHTTPRequest: started")
+	if glog.V(3) {
+		glog.Infoln("createHTTPRequest: started")
+	}
 	// Create the new request
 	var err error
 	r.Request, err = http.NewRequest(r.Method, r.Url, r.RequestReader)
@@ -264,7 +308,9 @@ func (r *Request) createHTTPRequest() error {
 		return err
 	}
 
-	glog.V(1).Infoln("createHTTPRequest: completed")
+	if glog.V(3) {
+		glog.Infoln("createHTTPRequest: completed")
+	}
 	return nil
 }
 
