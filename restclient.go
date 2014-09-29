@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+
 	"time"
 
 	"github.com/golang/glog"
@@ -47,6 +48,7 @@ type Request struct {
 
 	QueryParameters map[string]string // Parameters to attach to the QueryString
 	RequestBody     interface{}       // The body of the request
+	RequestType     string            // Request type for request (defaults to "json", options are: "json","form")
 	ResponseBody    interface{}       // The body of the response
 
 	RequestReader io.Reader // Reader interface to the encoded body
@@ -113,8 +115,14 @@ func (r *Request) Do() error {
 		return err
 	}
 
-	// Set the Content-Type header
-	r.Request.Header.Add("Content-Type", "application/json")
+	switch r.RequestType {
+	case "json":
+		r.Request.Header.Add("Content-Type", "application/json")
+	case "form":
+		r.Request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	default:
+		glog.Warningln("Unhandled request type")
+	}
 
 	// Apply authentication information
 	if r.Auth.Username != "" {
@@ -188,12 +196,25 @@ func (r *Request) EncodeRequestBody() error {
 		return nil
 	}
 
-	if glog.V(3) {
-		glog.Infoln("Encoding bodyObject (", r.RequestBody, ") to json")
+	// Find encoding type
+	if r.RequestType == "" {
+		r.RequestType = "json"
 	}
-	encodedBytes, err := json.Marshal(r.RequestBody)
-	if err != nil {
-		return err
+	var encodedBytes []byte
+	var err error
+	switch r.RequestType {
+	case "form":
+		encodedBytes, err = r.encodeForm()
+		if err != nil {
+			glog.Errorln("Failed to encode form:", err.Error())
+			return err
+		}
+	case "json":
+		encodedBytes, err = r.encodeJson()
+		if err != nil {
+			glog.Errorln("Failed to encode form:", err.Error())
+			return err
+		}
 	}
 
 	r.RequestReader = bytes.NewReader(encodedBytes)
@@ -203,6 +224,14 @@ func (r *Request) EncodeRequestBody() error {
 	return nil
 }
 
+// encodeJson encodes the request body to Json
+func (r *Request) encodeJson() ([]byte, error) {
+	if glog.V(3) {
+		glog.Infoln("Encoding bodyObject (", r.RequestBody, ") to json")
+	}
+	return json.Marshal(r.RequestBody)
+}
+
 // ProcessStatusCode processes and returns classified errors resulting
 // from the Response's StatusCode
 func (r *Request) ProcessStatusCode() error {
@@ -210,7 +239,7 @@ func (r *Request) ProcessStatusCode() error {
 		glog.Infoln("ProcessStatusCode: started")
 	}
 	resp := r.Response
-	if resp.StatusCode != 200 {
+	if (resp.StatusCode >= 300) || (resp.StatusCode < 200) {
 		switch {
 		case resp.StatusCode == 404:
 			return NotFoundError{resp.StatusCode, resp.Status, fmt.Errorf("%s", resp.Status)}
@@ -326,6 +355,15 @@ func Post(url string, auth Auth, req interface{}, ret interface{}) error {
 	r := NewRequest("POST", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
+	return r.Do()
+}
+
+// PostForm is a shorthand MakeRequest with method "POST" with form encoding
+func PostForm(url string, auth Auth, req interface{}, ret interface{}) error {
+	r := NewRequest("POST", url, auth)
+	r.RequestBody = req
+	r.ResponseBody = ret
+	r.RequestType = "form"
 	return r.Do()
 }
 
