@@ -96,7 +96,7 @@ func NewRequestAuth(method string, url string, username string, password string)
 	In general, this method should not be called directly.
 */
 func (r *Request) Do() error {
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("Do: started")
 	}
 
@@ -127,13 +127,13 @@ func (r *Request) Do() error {
 	// Apply authentication information
 	if r.Auth.Username != "" {
 		if glog.V(3) {
-			glog.Infoln("Adding authentication information:", r.Auth)
+			glog.Infof("Adding authentication information: (%+v)", r.Auth)
 		}
 		r.Request.SetBasicAuth(r.Auth.Username, r.Auth.Password)
 	}
 
 	// Send request
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("Sending request to server")
 	}
 	err = r.Execute()
@@ -141,7 +141,7 @@ func (r *Request) Do() error {
 		return err
 	}
 
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("Do: completed")
 	}
 	return nil
@@ -151,7 +151,7 @@ func (r *Request) Do() error {
 // the Request with the Client.  It sets the Response property on
 // successful communication
 func (r *Request) Execute() error {
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("Execute: started")
 	}
 	var err error
@@ -163,7 +163,7 @@ func (r *Request) Execute() error {
 	defer r.Response.Body.Close()
 
 	if glog.V(3) {
-		glog.Infoln("Server response:", r.Response)
+		glog.Infof("Server response: %+v", r.Response)
 	}
 
 	// Check for error codes
@@ -178,7 +178,7 @@ func (r *Request) Execute() error {
 		return err
 	}
 
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("MakeRequest: completed")
 	}
 	return nil
@@ -187,7 +187,7 @@ func (r *Request) Execute() error {
 // EncodeRequestBody performs the selected encoding on the
 // provided request body, populating the RequestReader
 func (r *Request) EncodeRequestBody() error {
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("EncodeRequestBody: started")
 	}
 	// Encode body to Json from the given body object
@@ -218,7 +218,7 @@ func (r *Request) EncodeRequestBody() error {
 	}
 
 	r.RequestReader = bytes.NewReader(encodedBytes)
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("EncodeRequestBody: completed")
 	}
 	return nil
@@ -227,7 +227,7 @@ func (r *Request) EncodeRequestBody() error {
 // encodeJson encodes the request body to Json
 func (r *Request) encodeJson() ([]byte, error) {
 	if glog.V(3) {
-		glog.Infoln("Encoding bodyObject (", r.RequestBody, ") to json")
+		glog.Infof("Encoding bodyObject (%+v) to json", r.RequestBody)
 	}
 	return json.Marshal(r.RequestBody)
 }
@@ -235,7 +235,7 @@ func (r *Request) encodeJson() ([]byte, error) {
 // ProcessStatusCode processes and returns classified errors resulting
 // from the Response's StatusCode
 func (r *Request) ProcessStatusCode() error {
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("ProcessStatusCode: started")
 	}
 	resp := r.Response
@@ -252,14 +252,14 @@ func (r *Request) ProcessStatusCode() error {
 		}
 	}
 
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("ProcessStatusCode: completed")
 	}
 	return nil
 }
 
 func (r *Request) DecodeResponse() error {
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("DecodeResponse: started")
 	}
 
@@ -270,12 +270,12 @@ func (r *Request) DecodeResponse() error {
 		return fmt.Errorf("Failed to read from body:", err)
 	}
 	if glog.V(3) {
-		glog.Infoln("Server response:", r.Response.Status, responseJson)
+		glog.Infof("Server response: (%v) %+v", r.Response.Status, responseJson)
 	}
 
 	// Unmarshal into response object
 	if len(responseJson) > 0 {
-		if glog.V(3) {
+		if glog.V(9) {
 			glog.Infoln("Decoding response")
 		}
 		err = json.Unmarshal(responseJson, r.ResponseBody)
@@ -289,7 +289,7 @@ func (r *Request) DecodeResponse() error {
 		}
 	}
 
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("DecodeResponse: completed")
 	}
 	return nil
@@ -298,12 +298,12 @@ func (r *Request) DecodeResponse() error {
 // createHTTPClient generates the http.Client object
 // from default parameters
 func (r *Request) createHTTPClient() {
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("createHTTPClient: started")
 	}
 
 	// Create transport for the request
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("Creating http.Transport")
 	}
 	dial := timeoutDialer(r.Timeout)
@@ -312,13 +312,13 @@ func (r *Request) createHTTPClient() {
 	}
 
 	// Create Client
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("Creating http.Client")
 	}
 	r.Client = http.Client{
 		Transport: &transport,
 	}
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("createHTTPClient: completed")
 	}
 }
@@ -326,7 +326,7 @@ func (r *Request) createHTTPClient() {
 // createHTTPRequest generates the actual http.Request object
 // from default parameters
 func (r *Request) createHTTPRequest() error {
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("createHTTPRequest: started")
 	}
 	// Create the new request
@@ -337,7 +337,7 @@ func (r *Request) createHTTPRequest() error {
 		return err
 	}
 
-	if glog.V(3) {
+	if glog.V(9) {
 		glog.Infoln("createHTTPRequest: completed")
 	}
 	return nil
