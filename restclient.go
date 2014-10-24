@@ -162,8 +162,8 @@ func (r *Request) Execute() error {
 	}
 	defer r.Response.Body.Close()
 
-	if glog.V(3) {
-		glog.Infof("Server response: %+v", r.Response)
+	if glog.V(9) {
+		glog.Infoln("Server response:", r.Response)
 	}
 
 	// Check for error codes
@@ -240,6 +240,9 @@ func (r *Request) ProcessStatusCode() error {
 	}
 	resp := r.Response
 	if (resp.StatusCode >= 300) || (resp.StatusCode < 200) {
+		if glog.V(3) {
+			glog.Warningf("Non-2XX response: (%d) %s", resp.StatusCode, resp.Status)
+		}
 		switch {
 		case resp.StatusCode == 404:
 			return NotFoundError{resp.StatusCode, resp.Status, fmt.Errorf("%s", resp.Status)}
@@ -268,9 +271,6 @@ func (r *Request) DecodeResponse() error {
 	if err != nil {
 		glog.Errorln("Failed to read from body:", r.Response.Body, err)
 		return fmt.Errorf("Failed to read from body:", err)
-	}
-	if glog.V(3) {
-		glog.Infof("Server response: (%v) %+v", r.Response.Status, responseJson)
 	}
 
 	// Unmarshal into response object
