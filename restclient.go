@@ -347,7 +347,7 @@ func (r *Request) createHTTPRequest() error {
 func Get(url string, auth Auth, ret interface{}) error {
 	r := NewRequest("GET", url, auth)
 	r.ResponseBody = ret
-	r.Request.Header.Set("Accept", "application/json")
+	//r.Request.Header.Set("Accept", "application/json")
 	return r.Do()
 }
 
@@ -356,7 +356,7 @@ func Post(url string, auth Auth, req interface{}, ret interface{}) error {
 	r := NewRequest("POST", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
-	r.Request.Header.Set("Accept", "application/json")
+	//r.Request.Header.Set("Accept", "application/json")
 	return r.Do()
 }
 
@@ -366,7 +366,7 @@ func PostForm(url string, auth Auth, req interface{}, ret interface{}) error {
 	r.RequestBody = req
 	r.ResponseBody = ret
 	r.RequestType = "form"
-	r.Request.Header.Set("Accept", "application/json")
+	//r.Request.Header.Set("Accept", "application/json")
 	return r.Do()
 }
 
@@ -375,7 +375,7 @@ func Put(url string, auth Auth, req interface{}, ret interface{}) error {
 	r := NewRequest("PUT", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
-	r.Request.Header.Set("Accept", "application/json")
+	//r.Request.Header.Set("Accept", "application/json")
 	return r.Do()
 }
 
@@ -384,7 +384,7 @@ func Delete(url string, auth Auth, req interface{}, ret interface{}) error {
 	r := NewRequest("DELETE", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
-	r.Request.Header.Set("Accept", "application/json")
+	//r.Request.Header.Set("Accept", "application/json")
 	return r.Do()
 }
 
@@ -393,7 +393,7 @@ func Patch(url string, auth Auth, req interface{}, ret interface{}) error {
 	r := NewRequest("PATCH", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
-	r.Request.Header.Set("Accept", "application/json")
+	//r.Request.Header.Set("Accept", "application/json")
 	return r.Do()
 }
 
