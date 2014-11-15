@@ -15,7 +15,7 @@ type tagOptions string
 func (r *Request) encodeForm() ([]byte, error) {
 	var out []byte
 	if glog.V(3) {
-		glog.Infoln("Encoding bodyObject (", r.RequestBody, ") to url.Values form")
+		glog.Infof("Encoding bodyObject (%+v) to url.Values form\n", r.RequestBody)
 	}
 
 	v, err := structToVals(r.RequestBody)
