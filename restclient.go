@@ -116,12 +116,15 @@ func (r *Request) Do() error {
 	}
 
 	switch r.RequestType {
+	case "":
+		glog.V(9).Infoln("No RequestType specified; using json")
+		r.Request.Header.Add("Content-Type", "application/json")
 	case "json":
 		r.Request.Header.Add("Content-Type", "application/json")
 	case "form":
 		r.Request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	default:
-		glog.Warningln("Unhandled request type")
+		glog.Warningln("Unhandled request type:", r.RequestType)
 	}
 
 	// Apply authentication information
@@ -192,7 +195,7 @@ func (r *Request) EncodeRequestBody() error {
 	}
 	// Encode body to Json from the given body object
 	if r.RequestBody == nil {
-		glog.Warningln("Nothing to encode")
+		glog.V(9).Infoln("Nothing to encode")
 		return nil
 	}
 
