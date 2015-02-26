@@ -25,13 +25,20 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 
 	"time"
-
-	"github.com/golang/glog"
 )
+
+// Logger
+var Logger *log.Logger
+
+func init() {
+	// Null logger, by default
+	Logger = log.New(ioutil.Discard, "restclient", log.LstdFlags|log.Lshortfile)
+}
 
 // Auth struct to contain username and password for authentication
 type Auth struct {
@@ -96,9 +103,7 @@ func NewRequestAuth(method string, url string, username string, password string)
 	In general, this method should not be called directly.
 */
 func (r *Request) Do() error {
-	if glog.V(9) {
-		glog.Infoln("Do: started")
-	}
+	Logger.Println("Do: started")
 
 	// Encode body to Json from the given body object
 	err := r.EncodeRequestBody()
@@ -117,36 +122,30 @@ func (r *Request) Do() error {
 
 	switch r.RequestType {
 	case "":
-		glog.V(9).Infoln("No RequestType specified; using json")
+		Logger.Println("No RequestType specified; using json")
 		r.Request.Header.Add("Content-Type", "application/json")
 	case "json":
 		r.Request.Header.Add("Content-Type", "application/json")
 	case "form":
 		r.Request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	default:
-		glog.Warningln("Unhandled request type:", r.RequestType)
+		Logger.Println("Unhandled request type:", r.RequestType)
 	}
 
 	// Apply authentication information
 	if r.Auth.Username != "" {
-		if glog.V(3) {
-			glog.Infof("Adding authentication information: (%+v)", r.Auth)
-		}
+		Logger.Printf("Adding authentication information: (%+v)", r.Auth)
 		r.Request.SetBasicAuth(r.Auth.Username, r.Auth.Password)
 	}
 
 	// Send request
-	if glog.V(9) {
-		glog.Infoln("Sending request to server")
-	}
+	Logger.Println("Sending request to server")
 	err = r.Execute()
 	if err != nil {
 		return err
 	}
 
-	if glog.V(9) {
-		glog.Infoln("Do: completed")
-	}
+	Logger.Println("Do: completed")
 	return nil
 }
 
@@ -154,20 +153,16 @@ func (r *Request) Do() error {
 // the Request with the Client.  It sets the Response property on
 // successful communication
 func (r *Request) Execute() error {
-	if glog.V(9) {
-		glog.Infoln("Execute: started")
-	}
+	Logger.Println("Execute: started")
 	var err error
 	r.Response, err = r.Client.Do(r.Request)
 	if err != nil {
-		glog.Errorln("Failed to make request to server:", err)
+		Logger.Println("Failed to make request to server:", err)
 		return err
 	}
 	defer r.Response.Body.Close()
 
-	if glog.V(9) {
-		glog.Infoln("Server response:", r.Response)
-	}
+	Logger.Println("Server response:", r.Response)
 
 	// Check for error codes
 	err = r.ProcessStatusCode()
@@ -181,21 +176,17 @@ func (r *Request) Execute() error {
 		return err
 	}
 
-	if glog.V(9) {
-		glog.Infoln("MakeRequest: completed")
-	}
+	Logger.Println("MakeRequest: completed")
 	return nil
 }
 
 // EncodeRequestBody performs the selected encoding on the
 // provided request body, populating the RequestReader
 func (r *Request) EncodeRequestBody() error {
-	if glog.V(9) {
-		glog.Infoln("EncodeRequestBody: started")
-	}
+	Logger.Println("EncodeRequestBody: started")
 	// Encode body to Json from the given body object
 	if r.RequestBody == nil {
-		glog.V(9).Infoln("Nothing to encode")
+		Logger.Println("Nothing to encode")
 		return nil
 	}
 
@@ -209,43 +200,35 @@ func (r *Request) EncodeRequestBody() error {
 	case "form":
 		encodedBytes, err = r.encodeForm()
 		if err != nil {
-			glog.Errorln("Failed to encode form:", err.Error())
+			Logger.Println("Failed to encode form:", err.Error())
 			return err
 		}
 	case "json":
 		encodedBytes, err = r.encodeJson()
 		if err != nil {
-			glog.Errorln("Failed to encode form:", err.Error())
+			Logger.Println("Failed to encode form:", err.Error())
 			return err
 		}
 	}
 
 	r.RequestReader = bytes.NewReader(encodedBytes)
-	if glog.V(9) {
-		glog.Infoln("EncodeRequestBody: completed")
-	}
+	Logger.Println("EncodeRequestBody: completed")
 	return nil
 }
 
 // encodeJson encodes the request body to Json
 func (r *Request) encodeJson() ([]byte, error) {
-	if glog.V(3) {
-		glog.Infof("Encoding bodyObject (%+v) to json", r.RequestBody)
-	}
+	Logger.Printf("Encoding bodyObject (%+v) to json", r.RequestBody)
 	return json.Marshal(r.RequestBody)
 }
 
 // ProcessStatusCode processes and returns classified errors resulting
 // from the Response's StatusCode
 func (r *Request) ProcessStatusCode() error {
-	if glog.V(9) {
-		glog.Infoln("ProcessStatusCode: started")
-	}
+	Logger.Println("ProcessStatusCode: started")
 	resp := r.Response
 	if (resp.StatusCode >= 300) || (resp.StatusCode < 200) {
-		if glog.V(3) {
-			glog.Warningf("Non-2XX response: (%d) %s", resp.StatusCode, resp.Status)
-		}
+		Logger.Printf("Non-2XX response: (%d) %s", resp.StatusCode, resp.Status)
 		switch {
 		case resp.StatusCode == 404:
 			return NotFoundError{resp.StatusCode, resp.Status, fmt.Errorf("%s", resp.Status)}
@@ -258,91 +241,69 @@ func (r *Request) ProcessStatusCode() error {
 		}
 	}
 
-	if glog.V(9) {
-		glog.Infoln("ProcessStatusCode: completed")
-	}
+	Logger.Println("ProcessStatusCode: completed")
 	return nil
 }
 
 func (r *Request) DecodeResponse() error {
-	if glog.V(9) {
-		glog.Infoln("DecodeResponse: started")
-	}
+	Logger.Println("DecodeResponse: started")
 
 	// Read the body into []byte
 	responseJson, err := ioutil.ReadAll(r.Response.Body)
 	if err != nil {
-		glog.Errorln("Failed to read from body:", r.Response.Body, err)
+		Logger.Println("Failed to read from body:", r.Response.Body, err)
 		return fmt.Errorf("Failed to read from body:", err)
 	}
 
 	// Unmarshal into response object
 	if len(responseJson) > 0 {
-		if glog.V(9) {
-			glog.Infoln("Decoding response")
-		}
+		Logger.Println("Decoding response")
 		err = json.Unmarshal(responseJson, r.ResponseBody)
 		if err != nil {
-			glog.Errorln("Failed to decode response body:", responseJson, err)
+			Logger.Println("Failed to decode response body:", responseJson, err)
 			return fmt.Errorf("Failed to decode response: %v", err.Error())
 		}
 	} else {
-		if glog.V(3) {
-			glog.Infoln("Zero-length response body")
-		}
+		Logger.Println("Zero-length response body")
 	}
 
-	if glog.V(9) {
-		glog.Infoln("DecodeResponse: completed")
-	}
+	Logger.Println("DecodeResponse: completed")
 	return nil
 }
 
 // createHTTPClient generates the http.Client object
 // from default parameters
 func (r *Request) createHTTPClient() {
-	if glog.V(9) {
-		glog.Infoln("createHTTPClient: started")
-	}
+	Logger.Println("createHTTPClient: started")
 
 	// Create transport for the request
-	if glog.V(9) {
-		glog.Infoln("Creating http.Transport")
-	}
+	Logger.Println("Creating http.Transport")
 	dial := timeoutDialer(r.Timeout)
 	transport := http.Transport{
 		Dial: dial,
 	}
 
 	// Create Client
-	if glog.V(9) {
-		glog.Infoln("Creating http.Client")
-	}
+	Logger.Println("Creating http.Client")
 	r.Client = http.Client{
 		Transport: &transport,
 	}
-	if glog.V(9) {
-		glog.Infoln("createHTTPClient: completed")
-	}
+	Logger.Println("createHTTPClient: completed")
 }
 
 // createHTTPRequest generates the actual http.Request object
 // from default parameters
 func (r *Request) createHTTPRequest() error {
-	if glog.V(9) {
-		glog.Infoln("createHTTPRequest: started")
-	}
+	Logger.Println("createHTTPRequest: started")
 	// Create the new request
 	var err error
 	r.Request, err = http.NewRequest(r.Method, r.Url, r.RequestReader)
 	if err != nil {
-		glog.Errorln("Failed to create request:", err)
+		Logger.Println("Failed to create request:", err)
 		return err
 	}
 
-	if glog.V(9) {
-		glog.Infoln("createHTTPRequest: completed")
-	}
+	Logger.Println("createHTTPRequest: completed")
 	return nil
 }
 
