@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/golang/glog"
 )
 
 type tagOptions string
@@ -14,13 +12,11 @@ type tagOptions string
 // encodeForm encodes the request body to url.Values.Encode()
 func (r *Request) encodeForm() ([]byte, error) {
 	var out []byte
-	if glog.V(3) {
-		glog.Infof("Encoding bodyObject (%+v) to url.Values form\n", r.RequestBody)
-	}
+	Logger.Printf("Encoding bodyObject (%+v) to url.Values form\n", r.RequestBody)
 
 	v, err := structToVals(r.RequestBody)
 	if err != nil {
-		glog.Errorln("Failed to convert struct to url.Values:", err.Error())
+		Logger.Println("Failed to convert struct to url.Values:", err.Error())
 		return out, err
 	}
 
@@ -52,7 +48,7 @@ func structToVals(s interface{}) (url.Values, error) {
 		case string:
 			val = f.String()
 		default:
-			glog.Warningln("Ignoring unhandled type")
+			Logger.Println("Ignoring unhandled type")
 			continue
 		}
 		name, opts := getTagName(t.Field(i))
