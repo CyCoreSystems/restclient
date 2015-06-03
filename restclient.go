@@ -237,7 +237,7 @@ func (r *Request) ProcessStatusCode() error {
 		case resp.StatusCode >= 500 && resp.StatusCode < 600:
 			return ServerError{resp.StatusCode, resp.Status, fmt.Errorf("%s", resp.Status)}
 		default:
-			return fmt.Errorf("Unhandled StatusCode: %s", resp.Status)
+			return BaseError{0, "Unhandled Status", fmt.Errorf("Unhandled StatusCode: %s", resp.Status)}
 		}
 	}
 
@@ -252,7 +252,7 @@ func (r *Request) DecodeResponse() error {
 	responseJson, err := ioutil.ReadAll(r.Response.Body)
 	if err != nil {
 		Logger.Println("Failed to read from body:", r.Response.Body, err)
-		return fmt.Errorf("Failed to read from body:", err)
+		return BaseError{0, "Decode Error", fmt.Errorf("Failed to read from body:", err)}
 	}
 
 	// Unmarshal into response object
@@ -261,7 +261,7 @@ func (r *Request) DecodeResponse() error {
 		err = json.Unmarshal(responseJson, r.ResponseBody)
 		if err != nil {
 			Logger.Println("Failed to decode response body:", responseJson, err)
-			return fmt.Errorf("Failed to decode response: %v", err.Error())
+			return BaseError{0, "Decode Error", fmt.Errorf("Failed to decode response: %v", err.Error())}
 		}
 	} else {
 		Logger.Println("Zero-length response body")
@@ -370,13 +370,33 @@ func timeoutDialer(timeout time.Duration) func(network, addr string) (net.Conn, 
 	}
 }
 
-// NotFoundError indicates a 404 status code was received
-// from the server
-type NotFoundError struct {
+type Error interface {
+	Error() string
+	Code() int
+	Message() string
+}
+
+type BaseError struct {
 	StatusCode int
 	Status     string
 	Err        error
 }
+
+func (e BaseError) Error() string {
+	return e.Err.Error()
+}
+
+func (e BaseError) Code() int {
+	return e.StatusCode
+}
+
+func (e BaseError) Message() string {
+	return e.Status
+}
+
+// NotFoundError indicates a 404 status code was received
+// from the server
+type NotFoundError BaseError
 
 func (e NotFoundError) Error() string {
 	return "Request: Not Found: " + e.Err.Error()
@@ -384,11 +404,7 @@ func (e NotFoundError) Error() string {
 
 // RequestError indicates a 4xx-level code other than 404
 // was received from the server
-type RequestError struct {
-	StatusCode int
-	Status     string
-	Err        error
-}
+type RequestError BaseError
 
 func (e RequestError) Error() string {
 	return "Request: Request failed: " + e.Status + ": " + e.Err.Error()
@@ -396,11 +412,7 @@ func (e RequestError) Error() string {
 
 // ServerError indicates a 5xx-level code was received from
 // the server
-type ServerError struct {
-	StatusCode int
-	Status     string
-	Err        error
-}
+type ServerError BaseError
 
 func (e ServerError) Error() string {
 	err := "Request: Server failure: " + e.Status + ": " + e.Err.Error()
