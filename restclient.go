@@ -102,7 +102,7 @@ func NewRequestAuth(method string, url string, username string, password string)
 
 	In general, this method should not be called directly.
 */
-func (r *Request) Do() error {
+func (r *Request) Do() Error {
 	Logger.Println("Do: started")
 
 	// Encode body to Json from the given body object
@@ -152,19 +152,20 @@ func (r *Request) Do() error {
 // Execute transacts with the remote server, actually executing
 // the Request with the Client.  It sets the Response property on
 // successful communication
-func (r *Request) Execute() error {
+func (r *Request) Execute() Error {
 	Logger.Println("Execute: started")
-	var err error
-	r.Response, err = r.Client.Do(r.Request)
-	if err != nil {
-		Logger.Println("Failed to make request to server:", err)
-		return err
+	var cerr error
+	r.Response, cerr = r.Client.Do(r.Request)
+	if cerr != nil {
+		Logger.Println("Failed to make request to server:", cerr)
+		return BaseError{0, "Unknown Error", cerr}
 	}
 	defer r.Response.Body.Close()
 
 	Logger.Println("Server response:", r.Response)
 
 	// Check for error codes
+	var err Error
 	err = r.ProcessStatusCode()
 	if err != nil {
 		return err
@@ -182,7 +183,7 @@ func (r *Request) Execute() error {
 
 // EncodeRequestBody performs the selected encoding on the
 // provided request body, populating the RequestReader
-func (r *Request) EncodeRequestBody() error {
+func (r *Request) EncodeRequestBody() Error {
 	Logger.Println("EncodeRequestBody: started")
 	// Encode body to Json from the given body object
 	if r.RequestBody == nil {
@@ -201,13 +202,13 @@ func (r *Request) EncodeRequestBody() error {
 		encodedBytes, err = r.encodeForm()
 		if err != nil {
 			Logger.Println("Failed to encode form:", err.Error())
-			return err
+			return BaseError{0, "Encoding Error", err}
 		}
 	case "json":
 		encodedBytes, err = r.encodeJson()
 		if err != nil {
 			Logger.Println("Failed to encode form:", err.Error())
-			return err
+			return BaseError{0, "Encoding Error", err}
 		}
 	}
 
@@ -224,18 +225,18 @@ func (r *Request) encodeJson() ([]byte, error) {
 
 // ProcessStatusCode processes and returns classified errors resulting
 // from the Response's StatusCode
-func (r *Request) ProcessStatusCode() error {
+func (r *Request) ProcessStatusCode() Error {
 	Logger.Println("ProcessStatusCode: started")
 	resp := r.Response
 	if (resp.StatusCode >= 300) || (resp.StatusCode < 200) {
 		Logger.Printf("Non-2XX response: (%d) %s", resp.StatusCode, resp.Status)
 		switch {
 		case resp.StatusCode == 404:
-			return NotFoundError{resp.StatusCode, resp.Status, fmt.Errorf("%s", resp.Status)}
+			return BaseError{resp.StatusCode, resp.Status, fmt.Errorf("Request: Not Found: %s", resp.Status)}
 		case resp.StatusCode >= 400 && resp.StatusCode < 500:
-			return RequestError{resp.StatusCode, resp.Status, fmt.Errorf("%s", resp.Status)}
+			return BaseError{resp.StatusCode, resp.Status, fmt.Errorf("Request: Request Error: %s", resp.Status)}
 		case resp.StatusCode >= 500 && resp.StatusCode < 600:
-			return ServerError{resp.StatusCode, resp.Status, fmt.Errorf("%s", resp.Status)}
+			return BaseError{resp.StatusCode, resp.Status, fmt.Errorf("Request: Server Error: %s", resp.Status)}
 		default:
 			return BaseError{0, "Unhandled Status", fmt.Errorf("Unhandled StatusCode: %s", resp.Status)}
 		}
@@ -245,7 +246,7 @@ func (r *Request) ProcessStatusCode() error {
 	return nil
 }
 
-func (r *Request) DecodeResponse() error {
+func (r *Request) DecodeResponse() Error {
 	Logger.Println("DecodeResponse: started")
 
 	// Read the body into []byte
@@ -293,14 +294,14 @@ func (r *Request) createHTTPClient() {
 
 // createHTTPRequest generates the actual http.Request object
 // from default parameters
-func (r *Request) createHTTPRequest() error {
+func (r *Request) createHTTPRequest() Error {
 	Logger.Println("createHTTPRequest: started")
 	// Create the new request
 	var err error
 	r.Request, err = http.NewRequest(r.Method, r.Url, r.RequestReader)
 	if err != nil {
 		Logger.Println("Failed to create request:", err)
-		return err
+		return BaseError{0, "Error", err}
 	}
 
 	Logger.Println("createHTTPRequest: completed")
@@ -308,7 +309,7 @@ func (r *Request) createHTTPRequest() error {
 }
 
 // Get is a shorthand MakeRequest with method = "GET"
-func Get(url string, auth Auth, ret interface{}) error {
+func Get(url string, auth Auth, ret interface{}) Error {
 	r := NewRequest("GET", url, auth)
 	r.ResponseBody = ret
 	//r.Request.Header.Set("Accept", "application/json")
@@ -316,7 +317,7 @@ func Get(url string, auth Auth, ret interface{}) error {
 }
 
 // Post is a shorthand MakeRequest with method "POST"
-func Post(url string, auth Auth, req interface{}, ret interface{}) error {
+func Post(url string, auth Auth, req interface{}, ret interface{}) Error {
 	r := NewRequest("POST", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
@@ -325,7 +326,7 @@ func Post(url string, auth Auth, req interface{}, ret interface{}) error {
 }
 
 // PostForm is a shorthand MakeRequest with method "POST" with form encoding
-func PostForm(url string, auth Auth, req interface{}, ret interface{}) error {
+func PostForm(url string, auth Auth, req interface{}, ret interface{}) Error {
 	r := NewRequest("POST", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
@@ -335,7 +336,7 @@ func PostForm(url string, auth Auth, req interface{}, ret interface{}) error {
 }
 
 // Put is a shorthand MakeRequest with method "PUT"
-func Put(url string, auth Auth, req interface{}, ret interface{}) error {
+func Put(url string, auth Auth, req interface{}, ret interface{}) Error {
 	r := NewRequest("PUT", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
@@ -344,7 +345,7 @@ func Put(url string, auth Auth, req interface{}, ret interface{}) error {
 }
 
 // Delete is a shorthand MakeRequest with method "DELETE"
-func Delete(url string, auth Auth, req interface{}, ret interface{}) error {
+func Delete(url string, auth Auth, req interface{}, ret interface{}) Error {
 	r := NewRequest("DELETE", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
@@ -353,7 +354,7 @@ func Delete(url string, auth Auth, req interface{}, ret interface{}) error {
 }
 
 // Patch is a shorthand MakeRequest with method "PATCH"
-func Patch(url string, auth Auth, req interface{}, ret interface{}) error {
+func Patch(url string, auth Auth, req interface{}, ret interface{}) Error {
 	r := NewRequest("PATCH", url, auth)
 	r.RequestBody = req
 	r.ResponseBody = ret
@@ -368,53 +369,4 @@ func timeoutDialer(timeout time.Duration) func(network, addr string) (net.Conn, 
 	return func(network string, address string) (net.Conn, error) {
 		return net.DialTimeout(network, address, timeout)
 	}
-}
-
-type Error interface {
-	Error() string
-	Code() int
-	Message() string
-}
-
-type BaseError struct {
-	StatusCode int
-	Status     string
-	Err        error
-}
-
-func (e BaseError) Error() string {
-	return e.Err.Error()
-}
-
-func (e BaseError) Code() int {
-	return e.StatusCode
-}
-
-func (e BaseError) Message() string {
-	return e.Status
-}
-
-// NotFoundError indicates a 404 status code was received
-// from the server
-type NotFoundError BaseError
-
-func (e NotFoundError) Error() string {
-	return "Request: Not Found: " + e.Err.Error()
-}
-
-// RequestError indicates a 4xx-level code other than 404
-// was received from the server
-type RequestError BaseError
-
-func (e RequestError) Error() string {
-	return "Request: Request failed: " + e.Status + ": " + e.Err.Error()
-}
-
-// ServerError indicates a 5xx-level code was received from
-// the server
-type ServerError BaseError
-
-func (e ServerError) Error() string {
-	err := "Request: Server failure: " + e.Status + ": " + e.Err.Error()
-	return err
 }
